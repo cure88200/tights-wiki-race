@@ -2,17 +2,10 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_call:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -20,15 +13,18 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Inject Version
+      - name: Inject Build Version
         run: |
-          SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          BUILD_DATE=$(TZ='Asia/Tokyo' date '+%Y/%m/%d %H:%M')
-          sed -i "s#__BUILD_VERSION__#${SHA} (${BUILD_DATE})#g" index.html
+          BUILD_TIME=$(TZ='Asia/Tokyo' date '+%Y/%m/%d %H:%M')
+          sed -i "s/__BUILD_VERSION__/${BUILD_TIME}/g" index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

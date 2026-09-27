@@ -2,8 +2,8 @@ name: Update Daily Wikipedia Game
 
 on:
   schedule:
-    # 日本時間の19:11 (UTCの10:11) に実行
-    - cron: "11 10 * * *"
+    # 日本時間の18:11 (UTCの9:17) に実行
+    - cron: "17 9 * * *"
   workflow_dispatch:
 
 jobs:
@@ -44,23 +44,8 @@ jobs:
   trigger-deploy:
     needs: update-daily
     uses: ./.github/workflows/deploy.yml
+    secrets: inherit
     permissions:
       contents: read
       pages: write
       id-token: write
-
-  notify-deploy:
-    needs: trigger-deploy
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify Deploy Discord
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: |
-          if [ "${{ needs.trigger-deploy.result }}" = "success" ]; then
-            MSG="🚀 **【tights-wiki-race】** GitHub Pagesのデプロイが完了したよ！"
-          else
-            MSG="🚨 **【tights-wiki-race】** デプロイでエラーが発生したよ！ログを確認してね！"
-          fi
-          curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$MSG\"}" "$DISCORD_WEBHOOK"
