@@ -36,12 +36,12 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           if [ "${{ job.status }}" = "success" ]; then
-            MSG="✅ **【tights-wiki-race】** デイリー記事の更新が完了したよ！"
+            TARGET=$(node -e "const d = require('./daily_history.json'); const latest = d.sort((a, b) => b.date.localeCompare(a.date))[0]; console.log(latest.date + '「' + latest.article + '」');")
+            MSG="✅ **【tights-wiki-race】** デイリー更新完了！次回お題: **${TARGET}**"
           else
             MSG="🚨 **【tights-wiki-race】** デイリー記事の更新でエラーが発生したよ！ログを確認してね！"
           fi
           curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$MSG\"}" "$DISCORD_WEBHOOK"
-
   trigger-deploy:
     needs: update-daily
     uses: ./.github/workflows/deploy.yml
