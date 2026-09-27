@@ -1006,7 +1006,9 @@
         startTime: 0,
         clearTime: 0,
         timerInterval: null,
+        dailyDate: "",
       };
+      let currentTodayStr = "";
       let pastDailyData = [];
       let pastDailyGroups = [];
       let pastDailyIdx = 0;
@@ -1174,10 +1176,10 @@
             </div>
             <div class="list-item-title" style="pointer-events: none; word-break: break-all;">${item.article}</div>
             <div id="past-expand-${i}" class="expand-container" style="display: ${isFirst ? "flex" : "none"}; margin-top: 8px; padding: 12px; gap: 8px;">
-              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" title="タイツ から ${item.article}" onclick="event.stopPropagation(); startGame('past', '${CONST_TIGHTS}', '${item.article}')">
+              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" title="タイツ から ${item.article}" onclick="event.stopPropagation(); startGame('past', '${CONST_TIGHTS}', '${item.article}', '${item.date}')">
                 <span class="btn-text-fixed">タイツ <span class="from-text-light">から</span>&nbsp;</span><span class="btn-text-crop">${item.article}</span>
               </button>
-              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" title="${item.article} から タイツ" onclick="event.stopPropagation(); startGame('past', '${item.article}', '${CONST_TIGHTS}')">
+              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" title="${item.article} から タイツ" onclick="event.stopPropagation(); startGame('past', '${item.article}', '${CONST_TIGHTS}', '${item.date}')">
                 <span class="btn-text-crop">${item.article}</span><span class="btn-text-fixed">&nbsp;<span class="from-text-light">から</span> タイツ</span>
               </button>
             </div>`;
@@ -1237,6 +1239,7 @@
           const startName = item.start || item.startArticle;
           const targetName = item.target || item.targetArticle;
           const itemMode = item.mode || "random";
+          const itemDailyDate = item.dailyDate || "";
 
           div.innerHTML = `
             <div class="list-item-header" style="pointer-events: none; display: flex; justify-content: space-between; align-items: center;">
@@ -1287,7 +1290,7 @@
 
           div.querySelector(".btn-retry-hist").onclick = (e) => {
             e.stopPropagation();
-            startGame(itemMode, startName, targetName);
+            startGame(itemMode, startName, targetName, itemDailyDate);
           };
 
           div.querySelector(".btn-share-hist").onclick = (e) => {
@@ -1359,6 +1362,8 @@
               todayEntry = d.find((item) => item.date <= todayStr) || d[0];
             }
 
+            currentTodayStr = todayEntry.date;
+
             const dateParts = todayEntry.date.split("-");
             const mNum = parseInt(dateParts[1], 10);
             const dNum = parseInt(dateParts[2], 10);
@@ -1371,9 +1376,19 @@
             UI.start.btnDaily2.title = `${todayEntry.article} から タイツ`;
 
             UI.start.btnDaily1.onclick = () =>
-              startGame("daily1", CONST_TIGHTS, todayEntry.article);
+              startGame(
+                "daily1",
+                CONST_TIGHTS,
+                todayEntry.article,
+                todayEntry.date,
+              );
             UI.start.btnDaily2.onclick = () =>
-              startGame("daily2", todayEntry.article, CONST_TIGHTS);
+              startGame(
+                "daily2",
+                todayEntry.article,
+                CONST_TIGHTS,
+                todayEntry.date,
+              );
 
             const pastList = d.filter((item) => item.date < todayEntry.date);
             pastDailyGroups = groupDataByWeek(pastList);
@@ -1403,6 +1418,7 @@
           clicks: state.clicks,
           time: state.clearTime,
           mode: state.mode,
+          dailyDate: state.dailyDate,
           path: state.path,
         });
         if (historyData.length > 100) historyData = historyData.slice(0, 100);
@@ -1414,10 +1430,9 @@
       }
 
       function genText(item) {
-        const m =
-          item.mode && (item.mode.startsWith("daily") || item.mode === "past")
-            ? "デイリーチャレンジ"
-            : "フリーチャレンジ";
+        const isDaily =
+          item.mode && (item.mode.startsWith("daily") || item.mode === "past");
+        const m = isDaily ? "デイリーチャレンジ" : "フリーチャレンジ";
         const start = item.start || item.startArticle;
         const target = item.target || item.targetArticle;
         const time =
@@ -1426,9 +1441,14 @@
             : item.clearTime !== undefined
               ? item.clearTime
               : 0;
-        const challengeUrl = `${APP_URL_BASE}?start=${encodeURIComponent(start)}&target=${encodeURIComponent(target)}`;
+
+        let challengeUrl = `${APP_URL_BASE}?start=${encodeURIComponent(start)}&target=${encodeURIComponent(target)}`;
+        if (isDaily && item.dailyDate) {
+          challengeUrl = `${APP_URL_BASE}?daily=${encodeURIComponent(item.dailyDate)}`;
+        }
         return `${m}を"${start}"から"${target}"でクリア！\nクリック回数：${item.clicks}回\nクリアタイム：${time}秒\n#tights-wiki-race\n${challengeUrl}`;
       }
+
       function shareHist(idx, isCopy) {
         const i = historyData[idx];
         if (!i) return;
@@ -1502,7 +1522,7 @@
         return results;
       }
 
-      async function startGame(mode, start, target) {
+      async function startGame(mode, start, target, dailyDate = "") {
         target = await resolveTitle(target);
         state = {
           ...state,
@@ -1511,6 +1531,7 @@
           targetArticle: target,
           start: start,
           target: target,
+          dailyDate: dailyDate,
           clicks: 0,
           path: [start],
           startTime: Date.now(),
@@ -1668,9 +1689,63 @@
 
       function checkUrlParams() {
         const p = new URLSearchParams(window.location.search);
+        const dailyParam = p.get("daily");
         const s = p.get("start");
         const t = p.get("target");
-        if (s || t) {
+
+        if (dailyParam) {
+          if (dailyParam === currentTodayStr) {
+            UI.start.endlessContainer.style.display = "none";
+            UI.start.dailyButtonsContainer.style.display = "flex";
+            UI.start.btnToggleDaily.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+            showToast(`${dailyParam} のデイリー問題です！`);
+          } else {
+            let targetGroupIdx = -1;
+            let targetItemIdx = -1;
+            for (let gi = 0; gi < pastDailyGroups.length; gi++) {
+              const found = pastDailyGroups[gi].items.findIndex(
+                (item) => item.date === dailyParam,
+              );
+              if (found !== -1) {
+                targetGroupIdx = gi;
+                targetItemIdx = found;
+                break;
+              }
+            }
+            if (targetGroupIdx !== -1) {
+              pastDailyIdx = targetGroupIdx;
+              renderPastDaily();
+              setTimeout(() => {
+                const targetCard = document.querySelectorAll(
+                  "#past-daily-list .list-item",
+                )[targetItemIdx];
+                const targetExpand = document.getElementById(
+                  `past-expand-${targetItemIdx}`,
+                );
+                if (targetCard && targetExpand) {
+                  document
+                    .querySelectorAll("#past-daily-list .expand-container")
+                    .forEach((el) => (el.style.display = "none"));
+                  document
+                    .querySelectorAll("#past-daily-list .list-item")
+                    .forEach((el) => el.classList.remove("open"));
+                  targetCard.classList.add("open");
+                  targetExpand.style.display = "flex";
+                  targetCard.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+                }
+              }, 100);
+              showToast(`${dailyParam} の過去問を表示しました！`);
+            } else {
+              showToast("指定されたデイリー問題が見つかりませんでした");
+            }
+          }
+        } else if (s || t) {
           if (s) UI.start.endlessStartInput.value = s;
           if (t) UI.start.endlessTargetInput.value = t;
           UI.start.dailyButtonsContainer.style.display = "none";
@@ -1688,8 +1763,8 @@
         if (e.target === modalHowto) modalHowto.classList.remove("active");
       };
 
-      window.addEventListener("DOMContentLoaded", () => {
-        loadDailyJson();
+      window.addEventListener("DOMContentLoaded", async () => {
+        await loadDailyJson();
         loadLocalHistory();
         checkUrlParams();
       });
