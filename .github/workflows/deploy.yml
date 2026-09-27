@@ -41,3 +41,15 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Notify Discord
+        if: always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            MSG="🚀 **【tights-wiki-race】** GitHub Pagesのデプロイが完了したよ！ (${{ github.event_name }})"
+          else
+            MSG="🚨 **【tights-wiki-race】** GitHub Pagesのデプロイでエラーが発生したよ！"
+          fi
+          curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$MSG\"}" "$DISCORD_WEBHOOK"
