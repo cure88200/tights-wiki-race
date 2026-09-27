@@ -35,13 +35,12 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then
-            TARGET=$(node -e "const d = require('./daily_history.json'); const latest = d.sort((a, b) => b.date.localeCompare(a.date))[0]; console.log(latest.date + '「' + latest.article + '」');")
-            MSG="✅ **【tights-wiki-race】** デイリー更新完了！次回お題: **${TARGET}**"
+          if [ "${{ job.status }}" = "success" ] && [ -f discord_payload.json ]; then
+            curl -H "Content-Type: application/json" -X POST -d @discord_payload.json "$DISCORD_WEBHOOK"
           else
-            MSG="🚨 **【tights-wiki-race】** デイリー記事の更新でエラーが発生したよ！ログを確認してね！"
+            curl -H "Content-Type: application/json" -X POST -d '{"content": "🚨 **【tights-wiki-race】** デイリー記事の更新でエラーが発生したよ！ログを確認してね！"}' "$DISCORD_WEBHOOK"
           fi
-          curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$MSG\"}" "$DISCORD_WEBHOOK"
+
   trigger-deploy:
     needs: update-daily
     uses: ./.github/workflows/deploy.yml

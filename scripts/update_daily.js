@@ -21,7 +21,7 @@ async function isSafeArticle(title) {
     const res = await fetch(url, {
       headers: {
         "User-Agent":
-          "WikiRaceApp/1.0 (https://cure88200.github.io/wiki-race/)",
+          "WikiRaceApp/1.0 (https://cure88200.github.io/tights-wiki-race/)",
       },
     });
     const data = await res.json();
@@ -50,7 +50,7 @@ async function getSafeRandomArticle() {
       {
         headers: {
           "User-Agent":
-            "WikiRaceApp/1.0 (https://cure88200.github.io/wiki-race/)",
+            "WikiRaceApp/1.0 (https://cure88200.github.io/tights-wiki-race/)",
         },
       },
     );
@@ -81,27 +81,59 @@ async function updateDaily() {
     history = JSON.parse(fs.readFileSync(historyPath, "utf8"));
   }
 
+  history.sort((a, b) => b.date.localeCompare(a.date));
+  const beforeTop3 = history.slice(0, 3);
+
   const todayStr = getJstDateString(0);
   const tomorrowStr = getJstDateString(1);
 
+  const results = [];
   let updated = false;
 
-  if (!history.some((h) => h.date === todayStr)) {
+  const todayItem = history.find((h) => h.date === todayStr);
+  if (!todayItem) {
     const title = await getSafeRandomArticle();
     history.push({ date: todayStr, article: title });
+    results.push(`・${todayStr} (本日): 【新規追加】「${title}」`);
     updated = true;
+  } else {
+    results.push(
+      `・${todayStr} (本日): 【スキップ】既存あり「${todayItem.article}」`,
+    );
   }
 
-  if (!history.some((h) => h.date === tomorrowStr)) {
+  const tomorrowItem = history.find((h) => h.date === tomorrowStr);
+  if (!tomorrowItem) {
     const title = await getSafeRandomArticle();
     history.push({ date: tomorrowStr, article: title });
+    results.push(`・${tomorrowStr} (明日): 【新規追加】「${title}」`);
     updated = true;
+  } else {
+    results.push(
+      `・${tomorrowStr} (明日): 【スキップ】既存あり「${tomorrowItem.article}」`,
+    );
   }
 
   if (updated) {
     history.sort((a, b) => b.date.localeCompare(a.date));
     fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), "utf8");
   }
+
+  const afterTop3 = history.slice(0, 3);
+
+  const formatList = (list) =>
+    list
+      .map((item, idx) => `  ${idx + 1}. ${item.date} : 「${item.article}」`)
+      .join("\n");
+
+  const message =
+    `📋 **【tights-wiki-race】デイリー更新レポート**\n\n` +
+    `**▼ 判定結果**\n${results.join("\n")}\n\n` +
+    `**▼ 実行前 (最新3件)**\n${formatList(beforeTop3) || "  (なし)"}\n\n` +
+    `**▼ 実行後 (最新3件)**\n${formatList(afterTop3)}`;
+
+  const payloadPath = path.join(__dirname, "..", "discord_payload.json");
+  fs.writeFileSync(payloadPath, JSON.stringify({ content: message }), "utf8");
 }
 
 updateDaily();
