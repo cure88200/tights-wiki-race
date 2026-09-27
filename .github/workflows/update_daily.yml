@@ -30,6 +30,18 @@ jobs:
           git add daily_history.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "Update daily_history.json" && git push)
 
+      - name: Notify Discord
+        if: always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            MSG="✅ **【tights-wiki-race】** デイリー記事の更新が完了したよ！"
+          else
+            MSG="🚨 **【tights-wiki-race】** デイリー記事の更新でエラーが発生したよ！ログを確認してね！"
+          fi
+          curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$MSG\"}" "$DISCORD_WEBHOOK"
+
   trigger-deploy:
     needs: update-daily
     uses: ./.github/workflows/deploy.yml
@@ -37,3 +49,19 @@ jobs:
       contents: read
       pages: write
       id-token: write
+
+  notify-deploy:
+    needs: trigger-deploy
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Deploy Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          if [ "${{ needs.trigger-deploy.result }}" = "success" ]; then
+            MSG="🚀 **【tights-wiki-race】** GitHub Pagesのデプロイが完了したよ！"
+          else
+            MSG="🚨 **【tights-wiki-race】** デプロイでエラーが発生したよ！ログを確認してね！"
+          fi
+          curl -H "Content-Type: application/json" -X POST -d "{\"content\": \"$MSG\"}" "$DISCORD_WEBHOOK"
