@@ -24,7 +24,7 @@ jobs:
       - name: Inject Build Version
         run: |
           BUILD_TIME=$(TZ='Asia/Tokyo' date '+%Y/%m/%d %H:%M')
-          sed -i "s/__BUILD_VERSION__/${BUILD_TIME}/g" index.html
+          sed -i "s#__BUILD_VERSION__#${BUILD_TIME}#g" index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
