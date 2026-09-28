@@ -134,7 +134,6 @@
         height: auto;
         padding: 10px 20px;
         line-height: 1.4;
-        word-break: break-word;
         border-radius: var(--md-shape-corner-medium);
         font-size: 15px;
         font-weight: 700;
@@ -145,12 +144,23 @@
         align-items: center;
         justify-content: center;
         user-select: none;
-        gap: 8px;
+        gap: 0;
         width: 100%;
         text-align: center;
+        overflow: hidden;
       }
       .btn:active {
         transform: scale(0.98);
+      }
+      .btn-text-fixed {
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
+      .btn-text-crop {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
       }
       .btn-primary {
         background-color: var(--md-sys-color-primary);
@@ -237,6 +247,17 @@
         color: var(--md-sys-color-on-surface);
         display: flex;
         align-items: center;
+      }
+      .list-item:not(.open) .history-route-title {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
+      }
+      .list-item.open .history-route-title {
+        white-space: normal !important;
+        word-break: break-all !important;
+        display: block !important;
       }
       .empty-text {
         text-align: center;
@@ -560,6 +581,7 @@
               font-weight: 900;
               color: var(--md-sys-color-on-surface);
               margin-top: 4px;
+              word-break: break-all;
             "
           >
             -
@@ -692,7 +714,7 @@
           </div>
           <div
             id="current-article-title"
-            style="font-size: 20px; font-weight: 900"
+            style="font-size: 20px; font-weight: 900; word-break: break-all"
           >
             -
           </div>
@@ -703,7 +725,11 @@
             "
           ></div>
           <div class="target-info">
-            🏁 ゴール: <span id="target-article-title"></span>
+            🏁 ゴール:
+            <span
+              id="target-article-title"
+              style="word-break: break-all"
+            ></span>
           </div>
           <div>
             <span class="clicks-badge"
@@ -723,7 +749,11 @@
       <div id="screen-result" class="screen screen-narrow">
         <div class="result-box">
           <h1 style="margin: 0; font-size: 32px">GOAL!🎉</h1>
-          <p class="subtitle" id="result-mode-text"></p>
+          <p
+            class="subtitle"
+            id="result-mode-text"
+            style="word-break: break-all"
+          ></p>
           <div
             style="
               display: flex;
@@ -1056,11 +1086,11 @@
             </div>
             <div class="list-item-title" style="pointer-events: none; word-break: break-all;">${item.article}</div>
             <div id="past-expand-${i}" class="expand-container" style="display: ${isFirst ? "flex" : "none"}; margin-top: 8px; padding: 12px; gap: 8px;">
-              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" onclick="event.stopPropagation(); startGame('past', '${CONST_TIGHTS}', '${item.article}')">
-                タイツ <span class="from-text-light">から</span> ${item.article}
+              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" title="タイツ から ${item.article}" onclick="event.stopPropagation(); startGame('past', '${CONST_TIGHTS}', '${item.article}')">
+                <span class="btn-text-fixed">タイツ <span class="from-text-light">から</span>&nbsp;</span><span class="btn-text-crop">${item.article}</span>
               </button>
-              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" onclick="event.stopPropagation(); startGame('past', '${item.article}', '${CONST_TIGHTS}')">
-                ${item.article} <span class="from-text-light">から</span> タイツ
+              <button class="btn btn-secondary" style="min-height: 40px; font-size: 13px; padding: 8px 12px;" title="${item.article} から タイツ" onclick="event.stopPropagation(); startGame('past', '${item.article}', '${CONST_TIGHTS}')">
+                <span class="btn-text-crop">${item.article}</span><span class="btn-text-fixed">&nbsp;<span class="from-text-light">から</span> タイツ</span>
               </button>
             </div>`;
           div.onclick = () => {
@@ -1128,7 +1158,7 @@
                 <svg class="card-chevron" viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
               </div>
             </div>
-            <div class="list-item-title" style="pointer-events: none; word-break: break-all; margin-top: 2px;">
+            <div class="list-item-title history-route-title" style="pointer-events: none; margin-top: 2px;" title="${startName} から ${targetName}">
               ${startName} <span class="from-text-light" style="color:var(--md-sys-color-on-surface-variant)">から</span> ${targetName}
             </div>
             <div id="hist-expand-${i}" class="expand-container" style="display: ${isFirst ? "flex" : "none"}; margin-top: 8px; padding: 12px; gap: 8px;">
@@ -1236,8 +1266,10 @@
 
             UI.start.dailyDateLabel.textContent = `${mNum}月${dNum}日のデイリー記事`;
             UI.start.todayDailyArticle.textContent = todayEntry.article;
-            UI.start.btnDaily1.innerHTML = `タイツ <span class="from-text-light">から</span> ${todayEntry.article}`;
-            UI.start.btnDaily2.innerHTML = `${todayEntry.article} <span class="from-text-light">から</span> タイツ`;
+            UI.start.btnDaily1.innerHTML = `<span class="btn-text-fixed">タイツ <span class="from-text-light">から</span>&nbsp;</span><span class="btn-text-crop">${todayEntry.article}</span>`;
+            UI.start.btnDaily1.title = `タイツ から ${todayEntry.article}`;
+            UI.start.btnDaily2.innerHTML = `<span class="btn-text-crop">${todayEntry.article}</span><span class="btn-text-fixed">&nbsp;<span class="from-text-light">から</span> タイツ</span>`;
+            UI.start.btnDaily2.title = `${todayEntry.article} から タイツ`;
 
             UI.start.btnDaily1.onclick = () =>
               startGame("daily1", CONST_TIGHTS, todayEntry.article);
