@@ -1615,9 +1615,16 @@
           const data = await res.json();
           const pages = data.query?.pages || {};
           const pid = Object.keys(pages)[0];
-          if (pid && pages[pid].title) return pages[pid].title;
+          if (
+            pid &&
+            pid !== "-1" &&
+            pages[pid].title &&
+            !("missing" in pages[pid])
+          ) {
+            return pages[pid].title;
+          }
         } catch (e) {}
-        return title;
+        return null;
       }
 
       async function loadArticle(title) {
@@ -1707,10 +1714,16 @@
       };
 
       UI.start.btnEndlessStart.onclick = async () => {
+        let s = UI.start.endlessStartInput.value.trim(),
+          t = UI.start.endlessTargetInput.value.trim();
+
+        if (s && t && s === t) {
+          showToast("スタートとゴールには別の記事を指定してね！");
+          return;
+        }
+
         showLoading(true);
         try {
-          let s = UI.start.endlessStartInput.value.trim(),
-            t = UI.start.endlessTargetInput.value.trim();
           if (!s && !t) {
             const r = await fetchRand(2);
             s = r[0];
@@ -1722,7 +1735,38 @@
             const r = await fetchRand(1);
             t = r[0];
           }
-          startGame("random", s, t);
+
+          const resolvedStart = await resolveTitle(s);
+          if (!resolvedStart) {
+            showToast(`スタート記事「${s}」が見つからないよ！`);
+            showLoading(false);
+            return;
+          }
+
+          let resolvedTarget = await resolveTitle(t);
+          if (!resolvedTarget) {
+            showToast(`ゴール記事「${t}」が見つからないよ！`);
+            showLoading(false);
+            return;
+          }
+
+          if (
+            UI.start.endlessStartInput.value.trim() &&
+            UI.start.endlessTargetInput.value.trim() &&
+            resolvedStart === resolvedTarget
+          ) {
+            showToast("転送先が同じ記事だよ！別の記事を指定してね！");
+            showLoading(false);
+            return;
+          }
+
+          while (resolvedStart === resolvedTarget) {
+            const retry = await fetchRand(1);
+            t = retry[0];
+            resolvedTarget = (await resolveTitle(t)) || t;
+          }
+
+          startGame("random", resolvedStart, resolvedTarget);
         } catch (e) {
           showToast("取得失敗");
         } finally {
