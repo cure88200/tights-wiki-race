@@ -137,19 +137,25 @@ async function updateDaily() {
   const results = [];
   let updated = false;
 
+  const getTitle = (item) => {
+    if (!item) return "(なし)";
+    if (item.article) return item.article;
+    if (item.encrypted) return decryptArticle(item.encrypted, item.date);
+    return "(不明)";
+  };
+
   const todayItem = history.find((h) => h.date === todayStr);
   if (!todayItem) {
     const title = await getSafeRandomArticle();
     history.push({
       date: todayStr,
-      article: title,
       encrypted: encryptArticle(title, todayStr),
     });
     results.push(`・${todayStr} (本日): 【新規追加】「${title}」`);
     updated = true;
   } else {
     results.push(
-      `・${todayStr} (本日): 【スキップ】既存あり「${todayItem.article || "(暗号化)"}」`,
+      `・${todayStr} (本日): 【スキップ】既存あり「${getTitle(todayItem)}」`,
     );
   }
 
@@ -160,13 +166,11 @@ async function updateDaily() {
       date: tomorrowStr,
       encrypted: encryptArticle(title, tomorrowStr),
     });
-    results.push(
-      `・${tomorrowStr} (明日): 【新規追加】「${title}」(暗号化保存)`,
-    );
+    results.push(`・${tomorrowStr} (明日): 【新規追加】「${title}」`);
     updated = true;
   } else {
     results.push(
-      `・${tomorrowStr} (明日): 【スキップ】既存あり「${tomorrowItem.article || "(暗号化)"}」`,
+      `・${tomorrowStr} (明日): 【スキップ】既存あり「${getTitle(tomorrowItem)}」`,
     );
   }
 
@@ -176,12 +180,6 @@ async function updateDaily() {
   }
 
   const afterTop3 = history.slice(0, 3);
-
-  const getTitle = (item) => {
-    if (item.article) return item.article;
-    if (item.encrypted) return decryptArticle(item.encrypted, item.date);
-    return "(不明)";
-  };
 
   const formatList = (list) =>
     list
