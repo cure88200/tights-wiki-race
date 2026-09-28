@@ -996,6 +996,7 @@
         "性器",
         "濡れ場",
       ];
+      const SECRET_SALT = "tights-wiki-race-secret-salt";
 
       let state = {
         mode: "",
@@ -1082,6 +1083,36 @@
         UI.game.content.scrollTo({ top: 0, behavior: "smooth" });
       };
 
+      async function decryptArticle(hexStr, dateStr) {
+        try {
+          const rawBytes = new Uint8Array(
+            hexStr.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)),
+          );
+          const iv = rawBytes.slice(0, 12);
+          const cipherWithTag = rawBytes.slice(12);
+
+          const keyBuf = await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(dateStr + SECRET_SALT),
+          );
+          const key = await crypto.subtle.importKey(
+            "raw",
+            keyBuf,
+            { name: "AES-GCM" },
+            false,
+            ["decrypt"],
+          );
+          const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            key,
+            cipherWithTag,
+          );
+          return new TextDecoder().decode(decrypted);
+        } catch (e) {
+          return null;
+        }
+      }
+
       let toastTimeout;
       function showToast(msg) {
         const t = document.getElementById("toast");
@@ -1108,6 +1139,12 @@
           }
           document.body.removeChild(ta);
         }
+      }
+
+      function copyPathText(pathArr) {
+        if (!pathArr || pathArr.length === 0) return;
+        const txt = pathArr.map((p, idx) => `${idx + 1}. ${p}`).join("\n");
+        copyToClipboard(txt);
       }
 
       function showScreen(name) {
@@ -1368,6 +1405,13 @@
               todayEntry = d.find((item) => item.date <= todayStr) || d[0];
             }
 
+            if (todayEntry.encrypted && !todayEntry.article) {
+              todayEntry.article = await decryptArticle(
+                todayEntry.encrypted,
+                todayEntry.date,
+              );
+            }
+
             currentTodayStr = todayEntry.date;
 
             const dateParts = todayEntry.date.split("-");
@@ -1397,6 +1441,12 @@
               );
 
             const pastList = d.filter((item) => item.date < todayEntry.date);
+            for (const item of pastList) {
+              if (item.encrypted && !item.article) {
+                item.article = await decryptArticle(item.encrypted, item.date);
+              }
+            }
+
             pastDailyGroups = groupDataByWeek(pastList);
             pastDailyIdx = 0;
             renderPastDaily();
@@ -1773,12 +1823,6 @@
       modalHowto.onclick = (e) => {
         if (e.target === modalHowto) modalHowto.classList.remove("active");
       };
-
-      function copyPathText(pathArr) {
-        if (!pathArr || pathArr.length === 0) return;
-        const txt = pathArr.map((p, idx) => `${idx + 1}. ${p}`).join("\n");
-        copyToClipboard(txt);
-      }
 
       window.addEventListener("DOMContentLoaded", async () => {
         await loadDailyJson();

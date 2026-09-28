@@ -1,5 +1,8 @@
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+
+const SALT = "tights-wiki-race-secret-salt";
 
 const SENSITIVE_KEYWORDS = [
   "性的",
@@ -14,6 +17,36 @@ const SENSITIVE_KEYWORDS = [
   "性器",
   "濡れ場",
 ];
+
+function encryptArticle(text, dateStr) {
+  const key = crypto
+    .createHash("sha256")
+    .update(dateStr + SALT)
+    .digest();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  const enc = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, enc, tag]).toString("hex");
+}
+
+function decryptArticle(hexStr, dateStr) {
+  try {
+    const key = crypto
+      .createHash("sha256")
+      .update(dateStr + SALT)
+      .digest();
+    const raw = Buffer.from(hexStr, "hex");
+    const iv = raw.subarray(0, 12);
+    const enc = raw.subarray(12, raw.length - 16);
+    const tag = raw.subarray(raw.length - 16);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(tag);
+    return decipher.update(enc, null, "utf8") + decipher.final("utf8");
+  } catch (e) {
+    return "(解読失敗)";
+  }
+}
 
 async function isSafeArticle(title) {
   if (title.endsWith("(曖昧さ回避)")) return false;
@@ -107,24 +140,33 @@ async function updateDaily() {
   const todayItem = history.find((h) => h.date === todayStr);
   if (!todayItem) {
     const title = await getSafeRandomArticle();
-    history.push({ date: todayStr, article: title });
+    history.push({
+      date: todayStr,
+      article: title,
+      encrypted: encryptArticle(title, todayStr),
+    });
     results.push(`・${todayStr} (本日): 【新規追加】「${title}」`);
     updated = true;
   } else {
     results.push(
-      `・${todayStr} (本日): 【スキップ】既存あり「${todayItem.article}」`,
+      `・${todayStr} (本日): 【スキップ】既存あり「${todayItem.article || "(暗号化)"}」`,
     );
   }
 
   const tomorrowItem = history.find((h) => h.date === tomorrowStr);
   if (!tomorrowItem) {
     const title = await getSafeRandomArticle();
-    history.push({ date: tomorrowStr, article: title });
-    results.push(`・${tomorrowStr} (明日): 【新規追加】「${title}」`);
+    history.push({
+      date: tomorrowStr,
+      encrypted: encryptArticle(title, tomorrowStr),
+    });
+    results.push(
+      `・${tomorrowStr} (明日): 【新規追加】「${title}」(暗号化保存)`,
+    );
     updated = true;
   } else {
     results.push(
-      `・${tomorrowStr} (明日): 【スキップ】既存あり「${tomorrowItem.article}」`,
+      `・${tomorrowStr} (明日): 【スキップ】既存あり「${tomorrowItem.article || "(暗号化)"}」`,
     );
   }
 
@@ -135,9 +177,15 @@ async function updateDaily() {
 
   const afterTop3 = history.slice(0, 3);
 
+  const getTitle = (item) => {
+    if (item.article) return item.article;
+    if (item.encrypted) return decryptArticle(item.encrypted, item.date);
+    return "(不明)";
+  };
+
   const formatList = (list) =>
     list
-      .map((item, idx) => `  ${idx + 1}. ${item.date} : 「${item.article}」`)
+      .map((item, idx) => `  ${idx + 1}. ${item.date} : 「${getTitle(item)}」`)
       .join("\n");
 
   const message =
