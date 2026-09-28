@@ -451,8 +451,9 @@
         color: var(--md-sys-color-on-surface);
       }
       .path-list {
-        padding-left: 24px;
+        padding-left: 0;
         margin: 0;
+        list-style: none;
         line-height: 1.6;
       }
       .path-list li {
@@ -1232,7 +1233,12 @@
               ? `
             <details class="path-details" onclick="event.stopPropagation();">
               <summary class="path-summary"><span>経路を見る</span><svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></summary>
-              <div class="path-content"><ol class="path-list">${pArr.map((p) => `<li>${p}</li>`).join("")}</ol></div>
+              <div class="path-content">
+                <ol class="path-list">${pArr.map((p, idx) => `<li>${idx + 1}.${p}</li>`).join("")}</ol>
+                <button class="btn btn-secondary" style="margin-top: 8px; min-height: 32px; height: 32px; font-size: 12px; width: 100%;" onclick="event.stopPropagation(); copyPathText(historyData[${item._oIdx}].path)">
+                  <svg style="width:14px; height:14px; fill:currentColor; margin-right:4px;" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>経路をコピー
+                </button>
+              </div>
             </details>`
               : "";
 
@@ -1624,7 +1630,12 @@
         UI.result.pathContainer.innerHTML = `
           <details class="path-details">
             <summary class="path-summary"><span>経路を見る</span><svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg></summary>
-            <div class="path-content"><ol class="path-list">${state.path.map((p) => `<li>${p}</li>`).join("")}</ol></div>
+            <div class="path-content">
+              <ol class="path-list">${state.path.map((p, idx) => `<li>${idx + 1}.${p}</li>`).join("")}</ol>
+              <button class="btn btn-secondary" style="margin-top: 8px; min-height: 36px; height: 36px; font-size: 13px; width: 100%;" onclick="copyPathText(state.path)">
+                <svg style="width:14px; height:14px; fill:currentColor; margin-right:4px;" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>経路をコピー
+              </button>
+            </div>
           </details>`;
         showScreen("result");
       }
@@ -1762,6 +1773,12 @@
       modalHowto.onclick = (e) => {
         if (e.target === modalHowto) modalHowto.classList.remove("active");
       };
+
+      function copyPathText(pathArr) {
+        if (!pathArr || pathArr.length === 0) return;
+        const txt = pathArr.map((p, idx) => `${idx + 1}. ${p}`).join("\n");
+        copyToClipboard(txt);
+      }
 
       window.addEventListener("DOMContentLoaded", async () => {
         await loadDailyJson();
