@@ -1249,10 +1249,22 @@
           if (!res.ok) throw new Error();
           const d = await res.json();
           if (d && d.length > 0) {
-            const now = new Date();
-            const yyyy = now.getFullYear();
-            const mm = String(now.getMonth() + 1).padStart(2, "0");
-            const dd = String(now.getDate()).padStart(2, "0");
+            console.log("res", res);
+            const serverDateHeader = res.headers.get("date");
+            const now = serverDateHeader
+              ? new Date(serverDateHeader)
+              : new Date();
+
+            const jstParts = new Intl.DateTimeFormat("ja-JP", {
+              timeZone: "Asia/Tokyo",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            }).formatToParts(now);
+
+            const yyyy = jstParts.find((p) => p.type === "year").value;
+            const mm = jstParts.find((p) => p.type === "month").value;
+            const dd = jstParts.find((p) => p.type === "day").value;
             const todayStr = `${yyyy}-${mm}-${dd}`;
 
             let todayEntry = d.find((item) => item.date === todayStr);
@@ -1260,9 +1272,9 @@
               todayEntry = d.find((item) => item.date <= todayStr) || d[0];
             }
 
-            const parts = todayEntry.date.split("-");
-            const mNum = parseInt(parts[1], 10);
-            const dNum = parseInt(parts[2], 10);
+            const dateParts = todayEntry.date.split("-");
+            const mNum = parseInt(dateParts[1], 10);
+            const dNum = parseInt(dateParts[2], 10);
 
             UI.start.dailyDateLabel.textContent = `${mNum}月${dNum}日のデイリー記事`;
             UI.start.todayDailyArticle.textContent = todayEntry.article;
