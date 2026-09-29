@@ -34,6 +34,27 @@
         --md-shape-corner-large: 28px;
         --md-shape-corner-full: 9999px;
       }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --md-sys-color-surface: #1e1e20;
+          --md-sys-color-surface-container: #141416;
+          --md-sys-color-surface-container-high: #2a2a2e;
+          --md-sys-color-on-surface: #f0f0f2;
+          --md-sys-color-on-surface-variant: #a0a0aa;
+          --md-sys-color-outline: #38383e;
+          --md-sys-color-primary: #f0f0f2;
+          --md-sys-color-on-primary: #141416;
+          --md-sys-color-secondary-container: #2a2a30;
+          --md-sys-color-on-secondary-container: #f0f0f2;
+          --shadow-color: rgba(0, 0, 0, 0.4);
+        }
+        .wiki-container a {
+          color: #60a5fa;
+        }
+        .loading-overlay {
+          background-color: rgba(20, 20, 22, 0.85);
+        }
+      }
       * {
         box-sizing: border-box;
         margin: 0;
@@ -88,6 +109,9 @@
         max-width: 500px;
         margin: 0 auto;
         width: 100%;
+      }
+      #screen-game {
+        position: relative;
       }
       @keyframes fadeIn {
         from {
@@ -197,6 +221,42 @@
         height: 20px;
         fill: currentColor;
       }
+      .btn-scroll-top {
+        position: absolute;
+        right: 16px;
+        bottom: 80px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-color: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface);
+        border: 1px solid var(--md-sys-color-outline);
+        box-shadow: 0 4px 12px var(--shadow-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 20;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(10px);
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+      }
+      .btn-scroll-top.visible {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+      }
+      .btn-scroll-top:active {
+        transform: scale(0.95);
+      }
+      .btn-scroll-top svg {
+        width: 22px;
+        height: 22px;
+        fill: currentColor;
+      }
       .from-text-light {
         opacity: 0.6;
         font-size: 0.9em;
@@ -303,6 +363,9 @@
       }
       .wiki-container .infobox,
       .wiki-container .navbox,
+      .wiki-container .ambox,
+      .wiki-container .mbox-small,
+      .wiki-container .messagebox,
       .wiki-container .mw-empty-elt,
       .wiki-container .reference,
       .wiki-container .reflist,
@@ -741,6 +804,15 @@
           </div>
         </div>
         <div class="wiki-container" id="wiki-content"></div>
+        <button
+          id="btn-scroll-top"
+          class="btn-scroll-top"
+          aria-label="上に戻る"
+        >
+          <svg viewBox="0 0 24 24">
+            <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z" />
+          </svg>
+        </button>
         <button class="btn btn-outline" id="btn-retire">
           リタイア (トップに戻る)
         </button>
@@ -989,6 +1061,20 @@
           timeDisplay: document.getElementById("result-time-display"),
           pathContainer: document.getElementById("result-path-container"),
         },
+      };
+
+      const btnScrollTop = document.getElementById("btn-scroll-top");
+
+      UI.game.content.addEventListener("scroll", () => {
+        if (UI.game.content.scrollTop > 300) {
+          btnScrollTop.classList.add("visible");
+        } else {
+          btnScrollTop.classList.remove("visible");
+        }
+      });
+
+      btnScrollTop.onclick = () => {
+        UI.game.content.scrollTo({ top: 0, behavior: "smooth" });
       };
 
       let toastTimeout;
@@ -1422,6 +1508,7 @@
         UI.game.targetTitle.textContent = target;
         UI.game.clickCount.textContent = "0";
         UI.game.content.innerHTML = "";
+        btnScrollTop.classList.remove("visible");
         showScreen("game");
         await loadArticle(start);
       }
@@ -1429,6 +1516,7 @@
       async function loadArticle(title) {
         showLoading(true);
         UI.game.content.scrollTop = 0;
+        btnScrollTop.classList.remove("visible");
         try {
           const res = await fetch(
             `${API_BASE}?action=parse&prop=text&format=json&origin=*&page=${encodeURIComponent(title)}&redirects=1`,
