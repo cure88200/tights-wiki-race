@@ -52,7 +52,8 @@
           color: #60a5fa;
         }
         .loading-overlay {
-          background-color: rgba(20, 20, 22, 0.85);
+          background-color: rgba(15, 15, 17, 0.85) !important;
+          backdrop-filter: blur(1px);
         }
       }
       * {
@@ -461,6 +462,7 @@
         position: absolute;
         inset: 0;
         background-color: rgba(245, 245, 246, 0.9);
+        backdrop-filter: blur(1px);
         z-index: 100;
         display: flex;
         flex-direction: column;
