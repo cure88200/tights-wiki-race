@@ -1443,15 +1443,25 @@
         if (title.endsWith("(曖昧さ回避)")) return false;
         try {
           const res = await fetch(
-            `${API_BASE}?action=query&titles=${encodeURIComponent(title)}&prop=categories|templates|pageprops&ppprop=disambiguation&cllimit=50&tllimit=50&format=json&origin=*`,
+            `${API_BASE}?action=query&titles=${encodeURIComponent(title)}&prop=categories|templates|pageprops|info|linkshere&ppprop=disambiguation&lhnamespace=0&lhlimit=10&cllimit=50&tllimit=50&format=json&origin=*`,
           );
           const data = await res.json();
           const pages = data.query?.pages || {};
           for (const pid in pages) {
             const page = pages[pid];
+
             if (page.pageprops && "disambiguation" in page.pageprops) {
               return false;
             }
+
+            if (page.length !== undefined && page.length < 800) {
+              return false;
+            }
+
+            if (!page.linkshere || page.linkshere.length < 10) {
+              return false;
+            }
+
             const categories = (page.categories || []).map((c) => c.title);
             const templates = (page.templates || []).map((t) => t.title);
             const allMeta = [...categories, ...templates].join(" ");

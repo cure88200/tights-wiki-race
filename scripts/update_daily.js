@@ -16,8 +16,9 @@ const SENSITIVE_KEYWORDS = [
 ];
 
 async function isSafeArticle(title) {
+  if (title.endsWith("(曖昧さ回避)")) return false;
   try {
-    const url = `https://ja.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=categories|templates&cllimit=50&tllimit=50&format=json`;
+    const url = `https://ja.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=categories|templates|pageprops|info|linkshere&ppprop=disambiguation&lhnamespace=0&lhlimit=10&cllimit=50&tllimit=50&format=json`;
     const res = await fetch(url, {
       headers: {
         "User-Agent":
@@ -28,6 +29,19 @@ async function isSafeArticle(title) {
     const pages = data.query?.pages || {};
     for (const pid in pages) {
       const page = pages[pid];
+
+      if (page.pageprops && "disambiguation" in page.pageprops) {
+        return false;
+      }
+
+      if (page.length !== undefined && page.length < 800) {
+        return false;
+      }
+
+      if (!page.linkshere || page.linkshere.length < 10) {
+        return false;
+      }
+
       const categories = (page.categories || []).map((c) => c.title);
       const templates = (page.templates || []).map((t) => t.title);
       const allMeta = [...categories, ...templates].join(" ");
