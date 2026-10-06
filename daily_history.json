@@ -1,5 +1,37 @@
 [
   {
+    "date": "2026-10-08",
+    "encrypted": "ae1e9b907187cfeae1ae8ca799e39ca4a2b1f18d865e7c2f37bb52454010224c422f437cb654d0b65e0eddba7527819f"
+  },
+  {
+    "date": "2026-10-07",
+    "encrypted": "34979c97aad1816365d03c98da6843e6a9a1dcf4cd8fb659f8271c8d2483be98d03fc9f8c6b2c6137bb8da5adf67b065e4b212aa88692e1cd98d4e1e2d"
+  },
+  {
+    "date": "2026-10-06",
+    "encrypted": "19da600108209ec7340e64f424dc904ceda6efc1609aee229e57da19b89b7400c2007c9a7cc4db51d5"
+  },
+  {
+    "date": "2026-10-05",
+    "encrypted": "666218a16e8d386da5c1e2c5dce5f3ac555428d3c4687befc1225f08c50a63385a884cfa17471055cc75f84c61b7a9eac3a162b56c15ca716f6e04b363f70a51830a89a213afc1fbca536e6295755dacf65bc0aba2183128e4"
+  },
+  {
+    "date": "2026-10-04",
+    "encrypted": "a0c8c1d3019d18c5ab71ea96e0f35d1ef987ee92bc5d743026872b865fb331221ca43038483eb870"
+  },
+  {
+    "date": "2026-10-03",
+    "encrypted": "8f3ecebebed9e8fef9fcf3497e2c67fdf9a7876e631a2595ba54c3ddab1c6892cee9b2359adc5a9e1d4ef600b639"
+  },
+  {
+    "date": "2026-10-02",
+    "encrypted": "a019a3082f38230cad34cb2aee9027cfa2849fc6a5d33a0887845a2845ffc11e9b73d03a826653a30b706781954169fcd9c68eb1"
+  },
+  {
+    "date": "2026-10-01",
+    "encrypted": "5285a7d35723b8b645a484401712a4f6e7ac6d09dd30802b1a09833451779dce87a5a271caacabb373e446e613e89b0245249368ab1b222d08cfa0bdb6d829a7a1189c3e3b0e8b8ddca88bb2e2d1fbbd35353d"
+  },
+  {
     "date": "2026-09-30",
     "encrypted": "e832d52ac9bf3452315ef99cf1f89eaf5b60b82e87ccb10114637e4ae0aca850bfda2db3ffa7ce1eddcffa6e5f1c587ce5c95c60cf908a0a476165fbf706f3ddf98f722efabc36464574e9a77b4b83"
   },
