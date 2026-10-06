@@ -129,10 +129,7 @@ async function updateDaily() {
   }
 
   history.sort((a, b) => b.date.localeCompare(a.date));
-  const beforeTop3 = history.slice(0, 3);
-
-  const todayStr = getJstDateString(0);
-  const tomorrowStr = getJstDateString(1);
+  const beforeTop7 = history.slice(0, 7);
 
   const results = [];
   let updated = false;
@@ -144,34 +141,26 @@ async function updateDaily() {
     return "(不明)";
   };
 
-  const todayItem = history.find((h) => h.date === todayStr);
-  if (!todayItem) {
-    const title = await getSafeRandomArticle();
-    history.push({
-      date: todayStr,
-      encrypted: encryptArticle(title, todayStr),
-    });
-    results.push(`・${todayStr} (本日): 【新規追加】「${title}」`);
-    updated = true;
-  } else {
-    results.push(
-      `・${todayStr} (本日): 【スキップ】既存あり「${getTitle(todayItem)}」`,
-    );
-  }
+  const dayLabels = ["本日", "明日", "2日後", "3日後"];
 
-  const tomorrowItem = history.find((h) => h.date === tomorrowStr);
-  if (!tomorrowItem) {
-    const title = await getSafeRandomArticle();
-    history.push({
-      date: tomorrowStr,
-      encrypted: encryptArticle(title, tomorrowStr),
-    });
-    results.push(`・${tomorrowStr} (明日): 【新規追加】「${title}」`);
-    updated = true;
-  } else {
-    results.push(
-      `・${tomorrowStr} (明日): 【スキップ】既存あり「${getTitle(tomorrowItem)}」`,
-    );
+  for (let offset = 0; offset < 4; offset++) {
+    const targetDateStr = getJstDateString(offset);
+    const label = dayLabels[offset];
+    const existingItem = history.find((h) => h.date === targetDateStr);
+
+    if (!existingItem) {
+      const title = await getSafeRandomArticle();
+      history.push({
+        date: targetDateStr,
+        encrypted: encryptArticle(title, targetDateStr),
+      });
+      results.push(`・${targetDateStr} (${label}): 【新規追加】「${title}」`);
+      updated = true;
+    } else {
+      results.push(
+        `・${targetDateStr} (${label}): 【スキップ】既存あり「${getTitle(existingItem)}」`,
+      );
+    }
   }
 
   if (updated) {
@@ -179,7 +168,7 @@ async function updateDaily() {
     fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), "utf8");
   }
 
-  const afterTop3 = history.slice(0, 3);
+  const afterTop7 = history.slice(0, 7);
 
   const formatList = (list) =>
     list
@@ -189,8 +178,8 @@ async function updateDaily() {
   const message =
     `📋 **【tights-wiki-race】デイリー更新レポート**\n\n` +
     `**▼ 判定結果**\n${results.join("\n")}\n\n` +
-    `**▼ 実行前 (最新3件)**\n${formatList(beforeTop3) || "  (なし)"}\n\n` +
-    `**▼ 実行後 (最新3件)**\n${formatList(afterTop3)}`;
+    `**▼ 実行前 (最新7件)**\n${formatList(beforeTop7) || "  (なし)"}\n\n` +
+    `**▼ 実行後 (最新7件)**\n${formatList(afterTop7)}`;
 
   const payloadPath = path.join(__dirname, "..", "discord_payload.json");
   fs.writeFileSync(payloadPath, JSON.stringify({ content: message }), "utf8");
