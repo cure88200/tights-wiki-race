@@ -1497,7 +1497,15 @@
       function genText(item) {
         const isDaily =
           item.mode && (item.mode.startsWith("daily") || item.mode === "past");
-        const m = isDaily ? "デイリーチャレンジ" : "フリーチャレンジ";
+        let m = isDaily ? "デイリーチャレンジ" : "フリーチャレンジ";
+        if (isDaily && item.dailyDate) {
+          const parts = item.dailyDate.split("-");
+          if (parts.length === 3) {
+            const mNum = parseInt(parts[1], 10);
+            const dNum = parseInt(parts[2], 10);
+            m = `${mNum}月${dNum}日のデイリーチャレンジ`;
+          }
+        }
         const start = item.start || item.startArticle;
         const target = item.target || item.targetArticle;
         const time =
@@ -1511,7 +1519,7 @@
         if (isDaily && item.dailyDate) {
           challengeUrl = `${APP_URL_BASE}?daily=${encodeURIComponent(item.dailyDate)}`;
         }
-        return `${m}を"${start}"から"${target}"でクリア！\nクリック回数：${item.clicks}回\nクリアタイム：${time}秒\n#tights-wiki-race\n${challengeUrl}`;
+        return `${m}を"${start}"から"${target}"でクリア！\nクリック回数：${item.clicks}回\nクリアタイム：${time}秒\n#TightsWikiRace\n${challengeUrl}`;
       }
 
       function shareHist(idx, isCopy) {
